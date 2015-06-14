@@ -7,10 +7,6 @@ from sklearn.linear_model import SGDRegressor
 
 df = pandas.read_csv('turnstile_weather_v2.csv')
 
-# t-tests rain vs no-rain and fog vs no-fog
-df['turnaround'] = df['ENTRIESn_hourly'] + df['EXITSn_hourly']
-
-## rain vs no-rain
 def assess_model(values, predictions):
     r_squared = 1 - numpy.sum((values-predictions)**2)/numpy.sum((values - numpy.mean(values))**2)
     abs_err = numpy.absolute(predictions - values)
@@ -48,21 +44,15 @@ def predict_gd(features, values):
     regr.fit(features, values)
     return regr.intercept_, regr.coef_
 
-print("Total mean turnaround", numpy.mean(df['turnaround']))
-without_rain_mean = numpy.mean(df[df['rain'] == 0]['turnaround'])
-with_rain_mean = numpy.mean(df[df['rain'] == 1]['turnaround'])
-without_fog_mean = numpy.mean(df[df['fog'] == 0]['turnaround'])
-with_fog_mean = numpy.mean(df[df['fog'] == 1]['turnaround'])
+print("Total mean entries", numpy.mean(df['ENTRIESn_hourly']))
+entries_with_rain = df[df['rain'] == 1]['ENTRIESn_hourly']
+entries_no_rain = df[df['rain'] == 0]['ENTRIESn_hourly']
+without_rain_mean = numpy.mean(entries_no_rain)
+with_rain_mean = numpy.mean(entries_with_rain)
 
-rain_vs_norain = scipy.stats.mannwhitneyu(df[df['rain'] == 1]['turnaround'], df[df['rain'] == 0]['turnaround'])
-print('Mean turnaround, rain vs no rain:', with_rain_mean, without_rain_mean)
-print('P-value of rain vs norain:',p_value(rain_vs_norain[0], df[df['rain'] == 1]['turnaround'],df[df['rain'] == 0]['turnaround']) )
-
-## fog vs no-fog
-
-fog_vs_nofog = scipy.stats.mannwhitneyu(df[df['fog'] == 1]['turnaround'], df[df['fog'] == 0]['turnaround'])
-print('Mean turnaround, fog vs no fog:', with_fog_mean, without_fog_mean)
-print('P-value of fog vs nofog:',p_value(fog_vs_nofog[0], df[df['fog'] == 1]['turnaround'],df[df['fog'] == 0]['turnaround']))
+rain_vs_norain = scipy.stats.mannwhitneyu(entries_with_rain,entries_no_rain )
+print('Mean entries, rain vs no rain:', with_rain_mean, without_rain_mean)
+print('P-value of rain vs norain:',p_value(rain_vs_norain[0], entries_with_rain, entries_no_rain))
 
 # Linear regression: which method predits turnaround better
 print("=================================")
@@ -98,16 +88,31 @@ for i in range(0, len(predictors)):
     r_sq_gr.append(r)
     mean_err_gr.append(m)
 
-r_sq_df = pandas.melt(DataFrame({'x': list(range(1, len(r_sq_ols)+1)), 'OLS': r_sq_ols, 'Gradient descent': r_sq_gr}), id_vars=['x'])
-mean_err_df = pandas.melt(DataFrame({'x': list(range(1, len(r_sq_ols)+1)),'OLS': mean_err_ols, 'Gradient descent': mean_err_gr}),id_vars=['x'])
+print(mean_err_ols)
+r_sq_df = pandas.melt(DataFrame({'x': list(range(1, len(r_sq_ols)+1)), \
+                                 'OLS': r_sq_ols, \
+                                 'Gradient descent': r_sq_gr}), \
+                      id_vars=['x'])
+mean_err_df = pandas.melt(DataFrame({'x': list(range(1, len(r_sq_ols)+1)),\
+                                     'OLS': mean_err_ols, \
+                                     'Gradient descent': mean_err_gr}),\
+                          id_vars=['x'])
 
-plot_rsq = ggplot(aes(x='x', y='value',color='variable'), data=r_sq_df) + geom_line() + ggtitle('R-squared') + ylab('') + xlab('Number of features') + theme_bw()
+plot_rsq = ggplot(aes(x='x', y='value',color='variable'), data=r_sq_df) + \
+           geom_line() + \
+           ggtitle('R-squared') + \
+           ylab('') + \
+           xlab('Number of features') + \
+           theme_bw()
 print(plot_rsq)
-#ggsave('rsq.png', plot_rsq)
 
-plot_mean = ggplot(aes(x='x', y='value',color='variable'), data=mean_err_df) + geom_line() + ggtitle('Mean absolute error') + ylab('') +  xlab('Number of features') + theme_bw()
+plot_mean = ggplot(aes(x='x', y='value',color='variable'), data=mean_err_df) + \
+            geom_line() + \
+            ggtitle('Mean absolute error') + \
+            ylab('') + \
+            xlab('Number of features') + \
+            theme_bw()
 print(plot_mean)
-ggsave('mean.png', plot_mean)
 
 
 
