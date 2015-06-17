@@ -54,7 +54,7 @@ rain_vs_norain = scipy.stats.mannwhitneyu(entries_with_rain,entries_no_rain )
 print('Mean entries, rain vs no rain:', with_rain_mean, without_rain_mean)
 print('P-value of rain vs norain:',p_value(rain_vs_norain[0], entries_with_rain, entries_no_rain))
 
-# Linear regression: which method predits turnaround better
+# Linear regression: which method predicts station entries better
 print("=================================")
 r_sq_ols = []
 mean_err_ols = []
@@ -88,7 +88,24 @@ for i in range(0, len(predictors)):
     r_sq_gr.append(r)
     mean_err_gr.append(m)
 
-print(mean_err_ols)
+cols = predictors[0:5]
+features = df[cols]
+dummy_units = pandas.get_dummies(df['UNIT'], prefix='unit')
+features = features.join(dummy_units)
+features_array = features.values
+values_array = values.values
+
+intercept_ols, params_ols = predict_ols(features_array, values_array)
+predictions_ols = intercept_ols + numpy.dot(features_array, params_ols)
+residuals = DataFrame({'residuals': values - predictions_ols})
+plot_resid = ggplot(aes(x='residuals'), data=residuals) + \
+           geom_histogram() + \
+           ggtitle('Histogram of residual errors,\nprediction of subway station entries') + \
+           ylab('count') + \
+           xlab('Residual error') + \
+           theme_bw()
+print(plot_resid)
+
 r_sq_df = pandas.melt(DataFrame({'x': list(range(1, len(r_sq_ols)+1)), \
                                  'OLS': r_sq_ols, \
                                  'Gradient descent': r_sq_gr}), \
@@ -113,9 +130,3 @@ plot_mean = ggplot(aes(x='x', y='value',color='variable'), data=mean_err_df) + \
             xlab('Number of features') + \
             theme_bw()
 print(plot_mean)
-
-
-
-
-
-
