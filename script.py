@@ -4,6 +4,7 @@ import scipy.stats
 from ggplot import *
 import statsmodels.api as sm
 from sklearn.linear_model import SGDRegressor
+import matplotlib.pyplot as plt
 
 df = pandas.read_csv('turnstile_weather_v2.csv')
 
@@ -105,6 +106,8 @@ plot_resid = ggplot(aes(x='residuals'), data=residuals) + \
            xlab('Residual error') + \
            theme_bw()
 print(plot_resid)
+res = scipy.stats.probplot(values - predictions_ols, plot=plt)
+plt.show()
 
 r_sq_df = pandas.melt(DataFrame({'x': list(range(1, len(r_sq_ols)+1)), \
                                  'OLS': r_sq_ols, \
